@@ -1,8 +1,5 @@
 import {GraphQLServer} from 'graphql-yoga'
-import { relative } from 'path';
-import { getGreeting } from './mymodule';
-import { getMaxListeners } from 'cluster';
-
+import uuidv4 from 'uuid/v4'
 const users=[{
     id:123,
     name:'guru',
@@ -74,6 +71,12 @@ type Query{
     comments : [Comment!]!
 }
 
+type Mutation{
+    createUser(name:String!,email:String!,age:Int):User!
+    createPost(title:String!,body:String!,published:Boolean!,author:ID!):Post!
+    createComment(text:String!,author:ID!,post:ID):Comment!
+}
+
 type Comment{
     id: ID!
     text: String!
@@ -101,7 +104,7 @@ type Post{
 `
 const resolvers={
     Query:{
-        me(){
+        me(parent,args,ctx,info){
             return {
                 id: 123,
                 name: 'guru',
@@ -132,27 +135,80 @@ const resolvers={
             return comments
         }
     },
+    Mutation:{
+        createUser(parent,args,ctx,info){
+           const emailTaken=users.some(user=>user.email===args.email)
+           if(emailTaken){
+                throw new Error('email already in use')
+           }
+           const user={
+            id:uuidv4(),
+            name:args.name,
+            email:args.email,
+            age:args.age
+           }
+           users.push(user)
+            console.log(users)
+            return user
+        },
+        createPost(parent,args,ctx,info){
+          const authorExist=users.some(user=>user.id===args.author)
+          if(!authorExist){
+            throw new Error('author not found')
+          }
+          const post={
+              id:uuidv4(),
+              title:args.title,
+              body:args.body,
+              isPublished:args.published,
+              author:args.author
+          }
+          posts.push(post)
+          console.log(posts)
+          return post
+          
+        },
+        createComment(parent,args,ctx,info){
+           let authorValid=users.some(user=>user.id===args.author)
+           let postValid=posts.some(post=>post.id===args.post&&post.isPublished==true)
+           if(!authorValid){
+            throw new Error('invalid author id')
+           }else if(!postValid){
+               throw new Error('invalid post id')
+           }else{
+               const comment={
+                   id:uuidv4(),
+                   text:args.text,
+                   author:args.author,
+                   post:args.post
+               }
+               comments.push(comment)
+               console.log(comment)
+               return comment
+           }
+        }
+    },
     Post:{
-        author(parent,args,ctx,info){
+        author(parent){
           return users.find(user=>user.id==parent.author)
         },
-        comments(parent,args,ctx,info){
+        comments(parent){
             return comments.filter(comment=>comment.id==parent.id)
           }
     },
     User:{
-        posts(parent,args,ctx,info){
+        posts(parent){
           return posts.filter(post=>post.author==parent.id)
         },
-        comments(parent,args,ctx,info){
+        comments(parent){
           return comments.filter(comment=>comment.author==parent.id)
         }
     },
     Comment:{
-        author(parent,args,ctx,info){
+        author(parent){
           return users.find(user=>user.id==parent.author)
         },
-        post(parent,args,ctx,info){
+        post(parent){
             return posts.find(post=>post.id==parent.post)
           }
     }
