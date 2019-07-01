@@ -1,12 +1,30 @@
-const User= {
-    posts(parent, args, { db }, info) {
-        return db.posts.filter(post => post.author == parent.id)
+import getUserId from '../utils/getUserId'
+const User = {
+    email: {
+        fragment: 'fragment userId on User{ id }',
+        resolve(parent, args, { request }, info) {
+            const userId = getUserId(request, false)
+            if (parent.id == userId) {
+                return parent.email
+            }
+            return null
+        }
     },
-    comments(parent, args, { db }, info) {
-        return db.comments.filter(comment => comment.author == parent.id)
+    posts: {
+        fragment: 'fragment userId on User { id }',
+        resolve(parent, args, { prisma, request }, info) {
+            return prisma.query.posts({
+                where: {
+                    published: true,
+                    author: {
+                        id: parent.id
+                    }
+                }
+            }, info)
+        }
     }
 }
 
-export{
+export {
     User as default
 }

@@ -1,9 +1,13 @@
 import { Prisma } from 'prisma-binding'
+import { fragmentReplacements } from './resolvers/index'
 
 const prisma = new Prisma({
     typeDefs: 'src/generated/prisma.graphql',
-    endpoint: 'http://localhost:4466'
+    endpoint: 'http://localhost:4466',
+    secret: 'prismasecret',
+    fragmentReplacements
 })
+export { prisma as default }
 
 // const updatePostForUser = async (postId, data) => {
 //     const postExists = await prisma.exists.Post({ id: postId })
