@@ -21,9 +21,9 @@ type Mutation{
 }
  
 type Subscription{
-    count:Int!
     comment(postId:ID!):CommentSubscriptionPayload!
     post:PostSubscriptionPayload!
+    mypost:PostSubscriptionPayload!
 }
 
 type AuthPayload{
@@ -38,6 +38,7 @@ input CreateUserInput{
 input UpdateUserInput{
     name:String
     email:String
+    password:String
 }
 input LoginUserInput{
     email:String!
